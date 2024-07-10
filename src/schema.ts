@@ -21,28 +21,20 @@ const Album = objectType({
     t.nonNull.string('title')
     t.nonNull.field('start_date', { type: 'DateTime' })
     t.nonNull.field('end_date', { type: 'DateTime' })
-    // t.nonNull.list.nonNull.field('pictures', {
-    //   type: 'Picture',
-    //   resolve: async (parent, _, context: Context) => {
-    //     try {
-    //       const album = await context.prisma.album.findUnique({
-    //         where: { id: +parent.id },
-    //         include: { pictures: true },
-    //       })
-    //       return album?.pictures || []
-    //     } catch (error) {
-    //       // Handle or log the error appropriately
-    //       console.error('Failed to fetch pictures:', error)
-    //       return []
-    //     }
-    //   },
-    // })
     t.nonNull.list.nonNull.field('pictures', {
       type: 'Picture',
       resolve: async (parent, _, context: Context) => {
-        return context.prisma.picture.findMany({
-          where: { albumId: +parent.id },
-        })
+        try {
+          const album = await context.prisma.album.findUnique({
+            where: { id: parent.id },
+            include: { pictures: true },
+          })
+          return album?.pictures || []
+        } catch (error) {
+          // Handle or log the error appropriately
+          console.error('Failed to fetch pictures:', error)
+          return []
+        }
       },
     })
   },
@@ -53,7 +45,7 @@ const Picture = objectType({
   definition(t) {
     t.nonNull.string('id')
     t.nonNull.string('url')
-    t.nonNull.int('albumId')
+    t.nonNull.string('albumId')
   },
 })
 
@@ -71,7 +63,7 @@ const BlogPost = objectType({
       resolve: async (parent, _, context: Context) => {
         try {
           const blogPost = await context.prisma.blogPost.findUnique({
-            where: { id: +parent.id },
+            where: { id: parent.id },
             include: { albums: true },
           })
 
@@ -87,7 +79,7 @@ const BlogPost = objectType({
       resolve: async (parent, _, context: Context) => {
         try {
           const blogPost = await context.prisma.blogPost.findUnique({
-            where: { id: +parent.id },
+            where: { id: parent.id },
             include: { countries: true },
           })
 
@@ -144,10 +136,10 @@ const Query = objectType({
 
     t.nullable.field('albumById', {
       type: 'Album',
-      args: { id: nonNull(intArg()) },
+      args: { id: nonNull(stringArg()) },
       resolve: (_parent, args, context: Context) => {
         return context.prisma.album.findUnique({
-          where: { id: args.id },
+          where: { id: args.id.toString() },
           include: { pictures: true },
         })
       },
@@ -165,10 +157,10 @@ const Query = objectType({
 
     t.nullable.field('blogPostById', {
       type: 'BlogPost',
-      args: { id: nonNull(intArg()) },
+      args: { id: nonNull(stringArg()) },
       resolve: (_parent, args, context: Context) => {
         return context.prisma.blogPost.findUnique({
-          where: { id: args.id },
+          where: { id: args.id.toString() },
           include: { countries: true, albums: true },
         })
       },
