@@ -1,0 +1,6 @@
+[
+  {
+    "type": "sqlite",
+    "path": "/Users/barnabas/blog_backend/prisma/dev.db"
+  }
+]
