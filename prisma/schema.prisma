@@ -10,8 +10,8 @@ datasource db {
 model Album {
   id         String     @id @default(cuid())
   title      String
-  start_date DateTime
-  end_date   DateTime
+  start_date DateTime   @default(now())
+  end_date   DateTime   @default(now())
   pictures   Picture[]
   blogPosts  BlogPost[]
 }

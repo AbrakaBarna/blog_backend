@@ -1,10 +1,10 @@
 import {
-  intArg,
   makeSchema,
   nonNull,
   objectType,
   stringArg,
   arg,
+  inputObjectType,
   asNexusMethod,
   enumType,
 } from 'nexus'
@@ -19,9 +19,9 @@ const Album = objectType({
   definition(t) {
     t.nonNull.string('id')
     t.nonNull.string('title')
-    t.nonNull.field('start_date', { type: 'DateTime' })
-    t.nonNull.field('end_date', { type: 'DateTime' })
-    t.nonNull.list.nonNull.field('pictures', {
+    t.field('start_date', { type: 'DateTime' })
+    t.field('end_date', { type: 'DateTime' })
+    t.list.nonNull.field('pictures', {
       type: 'Picture',
       resolve: async (parent, _, context: Context) => {
         try {
@@ -45,7 +45,7 @@ const Picture = objectType({
   definition(t) {
     t.nonNull.string('id')
     t.nonNull.string('url')
-    t.nonNull.string('albumId')
+    t.string('albumId')
   },
 })
 
@@ -56,9 +56,9 @@ const BlogPost = objectType({
     t.nonNull.string('title')
     t.nonNull.string('content')
     t.nonNull.field('publication_date', { type: 'DateTime' })
-    t.nonNull.field('start_date', { type: 'DateTime' })
-    t.nonNull.field('end_date', { type: 'DateTime' })
-    t.nonNull.list.nonNull.field('albums', {
+    t.field('start_date', { type: 'DateTime' })
+    t.field('end_date', { type: 'DateTime' })
+    t.list.field('albums', {
       type: 'Album',
       resolve: async (parent, _, context: Context) => {
         try {
@@ -183,160 +183,181 @@ const Query = objectType({
   },
 })
 
-// const Mutation = objectType({
-//   name: 'Mutation',
-//   definition(t) {
-//     // Album Mutations
-//     t.nonNull.field('createAlbum', {
-//       type: 'Album',
-//       args: {
-//         data: nonNull(
-//           arg({
-//             type: 'AlbumCreateInput',
-//           }),
-//         ),
-//       },
-//       resolve: (_, { data }, context: Context) => {
-//         return context.prisma.album.create({
-//           data: {
-//             title: data.title,
-//             start_date: data.start_date,
-//             end_date: data.end_date,
-//             pictures: {
-//               create: data.pictures.map((url: String) => ({ url })),
-//             },
-//           },
-//         })
-//       },
-//     })
+const Mutation = objectType({
+  name: 'Mutation',
+  definition(t) {
+    // // Album Mutations
+    t.nonNull.field('createAlbum', {
+      type: 'Album',
+      args: {
+        data: nonNull(
+          arg({
+            type: 'AlbumCreateInput',
+          }),
+        ),
+      },
+      resolve: (_, { data }, context: Context) => {
+        // const picturesData = data.pictures?.map((url) => {
+        //   return {
+        //     url,
+        //     albumId: '',
+        //   }
+        // })
+        console.log(data)
+        return context.prisma.album.create({
+          data: {
+            title: data.title,
+            start_date: new Date(data.start_date ?? new Date()),
+            end_date: new Date(data.end_date ?? new Date()),
+            // pictures: {
+            //   create: picturesData,
+            // },
+          },
+        })
+      },
+    })
+    //     t.field('updateAlbum', {
+    //       type: 'Album',
+    //       args: {
+    //         id: nonNull(intArg()),
+    //         data: nonNull(
+    //           arg({
+    //             type: 'AlbumUpdateInput',
+    //           }),
+    //         ),
+    //       },
+    //       resolve: async (_, { id, data }, context: Context) => {
+    //         const album = await context.prisma.album.update({
+    //           where: { id },
+    //           data: {
+    //             title: data.title || undefined,
+    //             start_date: data.start_date || undefined,
+    //             end_date: data.end_date || undefined,
+    //             pictures: data.pictures
+    //               ? {
+    //                   deleteMany: {},
+    //                   create: data.pictures.map((url: String) => ({ url })),
+    //                 }
+    //               : undefined,
+    //           },
+    //         })
+    //         return album
+    //       },
+    //     })
+    t.field('deleteAlbum', {
+      type: 'Album',
+      args: {
+        id: nonNull(stringArg()),
+      },
+      resolve: (_, { id }, context: Context) => {
+        return context.prisma.album.delete({
+          where: { id },
+        })
+      },
+    })
+    // BlogPost Mutations
+    //   t.nonNull.field('createBlogPost', {
+    //     type: 'BlogPost',
+    //     args: {
+    //       data: nonNull(
+    //         arg({
+    //           type: 'BlogPostCreateInput',
+    //         }),
+    //       ),
+    //     },
+    //     resolve: (_, { data }, context: Context) => {
+    //       return context.prisma.blogPost.create({
+    //         data: {
+    //           title: data.title,
+    //           content: data.content,
+    //           publication_date: data.publication_date,
+    //           start_date: data.start_date,
+    //           end_date: data.end_date,
+    //           albums: {
+    //             connect: data.albumIds.map((id: String) => ({ id })),
+    //           },
+    //           countries: {
+    //             connect: data.countryIds.map((id: String) => ({ id })),
+    //           },
+    //         },
+    //       })
+    //     },
+    //   })
+    //   t.field('updateBlogPost', {
+    //     type: 'BlogPost',
+    //     args: {
+    //       id: nonNull(intArg()),
+    //       data: nonNull(
+    //         arg({
+    //           type: 'BlogPostUpdateInput',
+    //         }),
+    //       ),
+    //     },
+    //     resolve: async (_, { id, data }, context: Context) => {
+    //       const blogPost = await context.prisma.blogPost.update({
+    //         where: { id },
+    //         data: {
+    //           title: data.title || undefined,
+    //           content: data.content || undefined,
+    //           publication_date: data.publication_date || undefined,
+    //           start_date: data.start_date || undefined,
+    //           end_date: data.end_date || undefined,
+    //           albums: data.albumIds
+    //             ? {
+    //                 set: data.albumIds.map((id: String) => ({ id })),
+    //               }
+    //             : undefined,
+    //           countries: data.countryIds
+    //             ? {
+    //                 set: data.countryIds.map((id: String) => ({ id })),
+    //               }
+    //             : undefined,
+    //         },
+    //       })
+    //       return blogPost
+    //     },
+    //   })
+    //   t.field('deleteBlogPost', {
+    //     type: 'BlogPost',
+    //     args: {
+    //       id: nonNull(intArg()),
+    //     },
+    //     resolve: (_, { id }, context: Context) => {
+    //       return context.prisma.blogPost.delete({
+    //         where: { id },
+    //       })
+    //     },
+    //   })
+  },
+})
 
-//     t.field('updateAlbum', {
-//       type: 'Album',
-//       args: {
-//         id: nonNull(intArg()),
-//         data: nonNull(
-//           arg({
-//             type: 'AlbumUpdateInput',
-//           }),
-//         ),
-//       },
-//       resolve: async (_, { id, data }, context: Context) => {
-//         const album = await context.prisma.album.update({
-//           where: { id },
-//           data: {
-//             title: data.title || undefined,
-//             start_date: data.start_date || undefined,
-//             end_date: data.end_date || undefined,
-//             pictures: data.pictures
-//               ? {
-//                   deleteMany: {},
-//                   create: data.pictures.map((url: String) => ({ url })),
-//                 }
-//               : undefined,
-//           },
-//         })
-//         return album
-//       },
-//     })
+const PictureCreateInput = inputObjectType({
+  name: 'PictureCreateInput',
+  definition(t) {
+    t.nonNull.string('url')
+  },
+})
 
-//     t.field('deleteAlbum', {
-//       type: 'Album',
-//       args: {
-//         id: nonNull(intArg()),
-//       },
-//       resolve: (_, { id }, context: Context) => {
-//         return context.prisma.album.delete({
-//           where: { id },
-//         })
-//       },
-//     })
-
-// BlogPost Mutations
-//   t.nonNull.field('createBlogPost', {
-//     type: 'BlogPost',
-//     args: {
-//       data: nonNull(
-//         arg({
-//           type: 'BlogPostCreateInput',
-//         }),
-//       ),
-//     },
-//     resolve: (_, { data }, context: Context) => {
-//       return context.prisma.blogPost.create({
-//         data: {
-//           title: data.title,
-//           content: data.content,
-//           publication_date: data.publication_date,
-//           start_date: data.start_date,
-//           end_date: data.end_date,
-//           albums: {
-//             connect: data.albumIds.map((id: String) => ({ id })),
-//           },
-//           countries: {
-//             connect: data.countryIds.map((id: String) => ({ id })),
-//           },
-//         },
-//       })
-//     },
-//   })
-
-//   t.field('updateBlogPost', {
-//     type: 'BlogPost',
-//     args: {
-//       id: nonNull(intArg()),
-//       data: nonNull(
-//         arg({
-//           type: 'BlogPostUpdateInput',
-//         }),
-//       ),
-//     },
-//     resolve: async (_, { id, data }, context: Context) => {
-//       const blogPost = await context.prisma.blogPost.update({
-//         where: { id },
-//         data: {
-//           title: data.title || undefined,
-//           content: data.content || undefined,
-//           publication_date: data.publication_date || undefined,
-//           start_date: data.start_date || undefined,
-//           end_date: data.end_date || undefined,
-//           albums: data.albumIds
-//             ? {
-//                 set: data.albumIds.map((id: String) => ({ id })),
-//               }
-//             : undefined,
-//           countries: data.countryIds
-//             ? {
-//                 set: data.countryIds.map((id: String) => ({ id })),
-//               }
-//             : undefined,
-//         },
-//       })
-//       return blogPost
-//     },
-//   })
-
-//   t.field('deleteBlogPost', {
-//     type: 'BlogPost',
-//     args: {
-//       id: nonNull(intArg()),
-//     },
-//     resolve: (_, { id }, context: Context) => {
-//       return context.prisma.blogPost.delete({
-//         where: { id },
-//       })
-//     },
-//   })
-//   },
-// })
+const AlbumCreateInput = inputObjectType({
+  name: 'AlbumCreateInput',
+  definition(t) {
+    t.nonNull.string('title')
+    t.string('start_date')
+    t.string('end_date')
+    // t.nonNull.list.nonNull.field('pictures', { type: 'PictureCreateInput' })
+  },
+})
 
 export const schema = makeSchema({
   types: [
     Query,
-    // Mutation,
+    Mutation,
     Album,
     Picture,
     BlogPost,
     Country,
+    AlbumCreateInput,
+    PictureCreateInput,
     SortOrder,
     DateTime,
   ],

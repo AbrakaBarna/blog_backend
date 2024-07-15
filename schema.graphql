@@ -3,21 +3,27 @@
 
 
 type Album {
-  end_date: DateTime!
+  end_date: DateTime
   id: String!
-  pictures: [Picture!]!
-  start_date: DateTime!
+  pictures: [Picture!]
+  start_date: DateTime
+  title: String!
+}
+
+input AlbumCreateInput {
+  end_date: String
+  start_date: String
   title: String!
 }
 
 type BlogPost {
-  albums: [Album!]!
+  albums: [Album]
   content: String!
   countries: [Country!]!
-  end_date: DateTime!
+  end_date: DateTime
   id: String!
   publication_date: DateTime!
-  start_date: DateTime!
+  start_date: DateTime
   title: String!
 }
 
@@ -31,9 +37,18 @@ A date-time string at UTC, such as 2007-12-03T10:15:30Z, compliant with the `dat
 """
 scalar DateTime
 
+type Mutation {
+  createAlbum(data: AlbumCreateInput!): Album!
+  deleteAlbum(id: String!): Album
+}
+
 type Picture {
-  albumId: String!
+  albumId: String
   id: String!
+  url: String!
+}
+
+input PictureCreateInput {
   url: String!
 }
 
